@@ -1,0 +1,3 @@
+# Transcribe in source language only, no translation
+
+The project targets French- and English-language footage, which could be read as "always produce both a French and an English subtitle track." We decided against that: v1 transcribes each recording in whichever language it was actually spoken (auto-detected, with manual override), and never translates. Voxtral Transcribe 2 is a transcription model, not a translation model, so translation would mean a second model/API call, extra cost, and extra failure modes for no requirement that was actually stated. "Mainly French and English" describes the expected *input* languages, not a translation requirement. Translation to both languages remains a possible future iteration.

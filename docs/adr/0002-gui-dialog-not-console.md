@@ -1,0 +1,3 @@
+# Interact via a Fusion UIManager dialog, not the console
+
+The script needs to collect an API key, a language override, and show progress/errors. We chose a native GUI window built with Resolve's `fusion.UIManager`, rather than driving interaction through Resolve's Python console via `input()`/`print()`. The end user is explicitly non-technical and unfamiliar with GitHub, let alone a script console — a dialog window looks and behaves like every other Resolve tool they already use, and lets us show real progress and plain-language errors instead of console text they'd need to find and read. The trade-off is more UI code to write and maintain versus a console-only script, but console interaction was judged too easy to get lost in for this audience.

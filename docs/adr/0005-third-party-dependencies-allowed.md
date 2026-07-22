@@ -1,0 +1,3 @@
+# Allow third-party dependencies (e.g. `requests`), install via pip
+
+The script uses third-party packages such as `requests` for the Mistral API call rather than being restricted to Python's standard library (`urllib.request`). This requires the README to walk the user through a `pip install` step, since Resolve's scripting environment uses the system Python and third-party packages aren't available otherwise. Standard-library-only would remove that setup step entirely, but was rejected: for a non-technical audience, a few extra clearly-documented setup steps were judged preferable to hand-rolling HTTP and file-format logic that a maintained library already handles correctly — a broken or subtly-buggy stdlib implementation is worse than a slightly longer install.

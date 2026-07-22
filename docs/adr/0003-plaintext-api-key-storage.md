@@ -1,0 +1,3 @@
+# Store the API key in a plaintext local config file
+
+The Mistral API key is entered once via the settings dialog and persisted in a plaintext JSON file in the user's local config directory, rather than in OS-native secure storage (macOS Keychain / Windows Credential Manager via the `keyring` package). Resolve's scripting environment runs on the system Python install, which has no bundled package manager access for the end user by default — requiring `keyring` would mean an extra dependency and setup step for marginal benefit, given this is a single-user desktop tool holding one low-value API key rather than a shared or high-value credential. Revisit this if the threat model changes (e.g. shared machines, higher-value credentials).

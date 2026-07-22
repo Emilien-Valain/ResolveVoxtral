@@ -1,0 +1,3 @@
+# Hand off the generated SRT for manual import, don't automate it
+
+After transcription, the script writes an `.srt` file and tells the user to import it via Resolve's native File → Import → Subtitle menu, rather than importing it onto the timeline automatically via the scripting API. Resolve's documented `Timeline.ImportIntoTimeline()` is scoped to AAF import; no reliably documented method exists for importing a standalone SRT file via script. Betting v1 on an undocumented/unconfirmed API path risks a silent or confusing failure for a non-technical user with no way to diagnose it, whereas the native menu import is a single well-known GUI action the README can show with a screenshot. Revisit once real-world testing confirms a reliable programmatic import path exists.
