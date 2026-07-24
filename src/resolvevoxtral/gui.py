@@ -19,27 +19,70 @@ from .errors import ResolveEnvironmentError
 LANGUAGE_OPTIONS = ["Auto", "French", "English"]
 
 
+def _find_injected(name):
+    """Look up a global Resolve injects into the launching script.
+
+    Objects like ``bmd``, ``fusion`` and ``fu`` are injected into the entry
+    script's namespace (``__main__``) -- not into this module -- and are
+    sometimes also reachable via ``builtins``.
+    """
+    import __main__
+    obj = getattr(__main__, name, None)
+    if obj is not None:
+        return obj
+    import builtins
+    return getattr(builtins, name, None)
+
+
 def _get_bmd():
+    bmd = _find_injected("bmd")
+    if bmd is not None:
+        return bmd
     try:
         import bmd
         return bmd
     except ImportError:
         pass
-    import builtins
-    found = getattr(builtins, "bmd", None)
-    if found is not None:
-        return found
     raise ResolveEnvironmentError(
         "Run this script from DaVinci Resolve's Scripts menu, not directly with Python."
+    )
+
+
+def _get_ui_manager(resolve, bmd):
+    """Return Fusion's UIManager, however this Resolve exposes it.
+
+    In the Scripts-menu context the injected ``fusion``/``fu`` global is the
+    UI-capable Fusion instance; ``resolve.Fusion()`` can hand back an object
+    whose ``UIManager`` is ``None``. Try the injected globals and
+    ``bmd.scriptapp("Fusion")`` before falling back to ``resolve.Fusion()``.
+    """
+    candidates = [
+        _find_injected("fusion"),
+        _find_injected("fu"),
+        bmd.scriptapp("Fusion"),
+    ]
+    if resolve is not None:
+        candidates.append(resolve.Fusion())
+
+    for fusion in candidates:
+        if fusion is None:
+            continue
+        ui = getattr(fusion, "UIManager", None)
+        if ui is not None:
+            return fusion, ui
+
+    raise ResolveEnvironmentError(
+        "Couldn't access DaVinci Resolve's Fusion UI system. Make sure this "
+        "script is launched from Resolve's Scripts menu (Workspace -> Scripts)."
     )
 
 
 class MainWindow:
     def __init__(self, resolve, callbacks):
         self.callbacks = callbacks
-        self.fusion = resolve.Fusion()
-        self.ui = self.fusion.UIManager
-        self.dispatcher = _get_bmd().UIDispatcher(self.ui)
+        bmd = _get_bmd()
+        self.fusion, self.ui = _get_ui_manager(resolve, bmd)
+        self.dispatcher = bmd.UIDispatcher(self.ui)
 
         ui = self.ui
         self.win = self.dispatcher.AddWindow(
