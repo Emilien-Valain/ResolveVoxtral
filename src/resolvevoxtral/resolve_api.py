@@ -25,29 +25,62 @@ AUDIO_CODEC = "PCM"
 AUDIO_FILE_EXTENSION = "wav"
 
 
+def _find_injected(name):
+    """Look up a global that Resolve injects into the launching script.
+
+    When a script runs from Resolve's Scripts menu, objects like ``resolve``
+    and ``bmd`` are injected into the entry script's namespace (``__main__``)
+    -- not into this module -- and are sometimes reachable via ``builtins``.
+    """
+    import __main__
+    obj = getattr(__main__, name, None)
+    if obj is not None:
+        return obj
+    import builtins
+    return getattr(builtins, name, None)
+
+
 def get_resolve():
     """Returns the Resolve scriptapp object.
 
-    Scripts launched from Resolve's Scripts menu normally have ``bmd``
-    injected into their global namespace already, but we go through the
-    documented ``DaVinciResolveScript`` module directly so this works
-    whether or not that injection happens for this Resolve version.
+    Scripts launched from Resolve's Scripts menu get the API through injected
+    globals (``resolve`` / ``bmd``), not through the ``DaVinciResolveScript``
+    helper module -- that module is only importable when the
+    ``RESOLVE_SCRIPT_*`` environment variables are set (the external-scripting
+    setup). Try the in-app paths first, then fall back to the module.
     """
+    # 1. `resolve` injected directly into the launching script's namespace.
+    resolve = _find_injected("resolve")
+    if resolve is not None:
+        return resolve
+
+    # 2. `bmd.scriptapp("Resolve")` -- bmd is injected in the Fusion
+    #    scripting context that the Scripts menu runs scripts in.
+    bmd = _find_injected("bmd")
+    if bmd is None:
+        try:
+            import bmd
+        except ImportError:
+            bmd = None
+    if bmd is not None:
+        resolve = bmd.scriptapp("Resolve")
+        if resolve is not None:
+            return resolve
+
+    # 3. The DaVinciResolveScript helper module (external / env-var setups).
     try:
         import DaVinciResolveScript as dvr_script
-    except ImportError as e:
-        raise ResolveEnvironmentError(
-            "Couldn't load Resolve's scripting module. Make sure this "
-            "script is being run from inside DaVinci Resolve's Scripts menu."
-        ) from e
+        resolve = dvr_script.scriptapp("Resolve")
+        if resolve is not None:
+            return resolve
+    except ImportError:
+        pass
 
-    resolve = dvr_script.scriptapp("Resolve")
-    if resolve is None:
-        raise ResolveEnvironmentError(
-            "Couldn't connect to DaVinci Resolve. Make sure Resolve is "
-            "running and this script was launched from its Scripts menu."
-        )
-    return resolve
+    raise ResolveEnvironmentError(
+        "Couldn't connect to DaVinci Resolve's scripting API. Make sure this "
+        "script is launched from Resolve's Scripts menu (Workspace -> "
+        "Scripts), and that your Resolve version allows scripting."
+    )
 
 
 def get_current_project(resolve):
