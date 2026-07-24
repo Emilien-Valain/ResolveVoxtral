@@ -1,5 +1,7 @@
 """Plaintext local settings file (see docs/adr/0003-plaintext-api-key-storage.md)."""
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path
