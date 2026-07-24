@@ -6,6 +6,8 @@ but the "Speaker N:" prefix is only shown when the speaker differs from
 the previous cue, not on every cue.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 from .errors import ResolveVoxtralError
