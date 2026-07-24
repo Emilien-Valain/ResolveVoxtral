@@ -10,6 +10,8 @@ NOTE: the exact model id, the speaker field name, and whether `language` and
 project's implementation plan for the full checklist.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import requests
