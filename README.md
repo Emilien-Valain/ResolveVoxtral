@@ -4,11 +4,14 @@ A DaVinci Resolve script that transcribes your timeline's audio into subtitles, 
 
 **This tool transcribes only — it does not translate.** If your audio is in French, you get French subtitles; if it's in English, you get English subtitles. It's Windows only for now.
 
+> [!IMPORTANT]
+> **DaVinci Resolve _Studio_ (the paid version) is required.** ResolveVoxtral builds its window with Fusion's UI scripting toolkit, which Blackmagic **disabled in the free edition starting with Resolve 19.1**. On the free edition the script starts but the window never appears (the console shows a `UIManager`/`'NoneType' object has no attribute 'VGroup'` error). To check which edition you have, open **DaVinci Resolve → About DaVinci Resolve** — the title says "DaVinci Resolve Studio" if you're on Studio.
+
 This guide assumes no prior experience with Python, GitHub, or DaVinci Resolve scripting — every step is spelled out.
 
 ## What you'll need
 
-- Windows, with DaVinci Resolve already installed.
+- Windows, with **DaVinci Resolve Studio** already installed (the free edition won't work — see the note above).
 - An internet connection.
 - A Mistral AI account (free to create) to get an API key — transcription itself is a paid, pay-as-you-go API call (a few tenths of a cent per minute of audio at the time of writing).
 - About 10-15 minutes for the one-time setup below.
@@ -21,6 +24,9 @@ DaVinci Resolve scripts run on a Python installed on your computer.
 2. Type `python --version` and press Enter.
    - If you see something like `Python 3.11.4`, you're set — skip to Step 2.
    - If you see an error like "Python is not recognized", download Python from [python.org/downloads](https://www.python.org/downloads/), run the installer, and **make sure to check the box "Add python.exe to PATH"** on the first install screen before clicking Install.
+
+> [!NOTE]
+> Resolve works best with a Python version it officially supports (**3.6 through 3.13**). A brand-new release like 3.14 usually still works but is newer than what your Resolve version was tested against, so if you hit odd scripting errors, installing 3.13 is the safest choice.
 3. Close and reopen Command Prompt, then run `python --version` again to confirm it worked.
 
 ## Step 2 — Install the one required package
@@ -44,12 +50,21 @@ If this step fails with a permissions error, try `pip install --user requests` i
 ## Step 4 — Copy the script into Resolve's Scripts folder
 
 1. Open the extracted folder — you should see a file named `ResolveVoxtral.py` and a folder named `resolvevoxtral` sitting next to each other. **They must stay together, side by side.**
-2. Open File Explorer and paste this path into the address bar (adjust `YourUsername` to your Windows username):
-   ```
-   %APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility
-   ```
-3. If the `Utility` folder doesn't exist yet, create it.
+2. Open File Explorer and paste one of these paths into the address bar. Resolve reads scripts from **one** of two `Scripts` folders depending on your install — try the first, and if the script doesn't show up in Resolve's menu later (Step 6), use the second instead:
+   - **Per-user** (paste as-is, it expands automatically):
+     ```
+     %APPDATA%\Blackmagic Design\DaVinci Resolve\Support\Fusion\Scripts\Utility
+     ```
+   - **All-users** (note: no "Support" in this one):
+     ```
+     %PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Fusion\Scripts\Utility
+     ```
+3. If the `Utility` folder (or the folders above it) doesn't exist yet, create it.
 4. Copy **both** `ResolveVoxtral.py` and the `resolvevoxtral` folder into that `Utility` folder.
+5. After copying, **fully quit and reopen DaVinci Resolve** — it only scans the Scripts menu at startup, so a new script won't appear until you restart.
+
+> [!TIP]
+> You'll also see a `resolvevoxtral` sub-menu full of module names (`app`, `config`, …) under Scripts. That's normal — Resolve lists every sub-folder as a menu. Ignore it and always launch **ResolveVoxtral**.
 
 ## Step 5 — Get a Mistral API key
 
@@ -86,6 +101,8 @@ ResolveVoxtral creates the subtitle file but doesn't insert it into your timelin
 
 | What you see | What it means | What to do |
 |---|---|---|
+| `'NoneType' object has no attribute 'VGroup'` in the console, no window opens | You're on the **free** edition of Resolve, which can't show the UI. | Use DaVinci Resolve **Studio**. There's no workaround on the free edition. |
+| ResolveVoxtral never appears in Workspace → Scripts | The files are in the Scripts folder Resolve doesn't read, or Resolve wasn't restarted. | Try the other folder location in Step 4, and fully restart Resolve. |
 | "No project is open in DaVinci Resolve." | You opened ResolveVoxtral without a project open. | Open a project, then run ResolveVoxtral again. |
 | "No timeline is open." | The project has no active timeline. | Open/select a timeline, then run ResolveVoxtral again. |
 | "Your Mistral API key was rejected." | The saved key is wrong, expired, or was revoked. | Click **Settings** and paste in a fresh key from console.mistral.ai. |
@@ -101,6 +118,7 @@ ResolveVoxtral creates the subtitle file but doesn't insert it into your timelin
 
 ## Known limitations (v1)
 
+- **DaVinci Resolve Studio only.** The free edition can't display the window (Blackmagic disabled Fusion UI scripting there in Resolve 19.1).
 - **Windows only.** macOS/Linux support isn't planned for v1. ([why](docs/adr/0006-windows-only-v1.md))
 - **No translation.** Subtitles are produced in the language actually spoken, not translated to a second language. ([why](docs/adr/0001-no-translation-in-v1.md))
 - **No automatic subtitle import.** You import the generated `.srt` yourself via Resolve's own File → Import → Subtitle. ([why](docs/adr/0004-manual-srt-import.md))
